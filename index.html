@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe - Play Online Against Unbeatable Bot & Friends</title>
+    <!-- Google Fonts for retro style -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Embedded CSS for styling the game -->
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #1a1a2e; /* Dark blue/purple */
+            color: #e0e0e0; /* Light gray */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px; /* Add some padding for small screens */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            overflow-y: auto; /* Allow vertical scrolling if content overflows */
+        }
+
+        .game-container {
+            background-color: #2a2a4a; /* Slightly lighter dark blue */
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6); /* Stronger shadow */
+            text-align: center;
+            transform: perspective(1000px) rotateY(0deg);
+            transition: transform 0.5s ease-in-out;
+            max-width: 450px; /* Max width for desktop, allows scaling down */
+            width: 100%; /* Ensure it takes full width on smaller screens */
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #00f0ff; /* Cyan for heading */
+            margin-bottom: 25px;
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.8); /* Stronger glow */
+            font-size: 2.2em; /* Slightly larger for impact */
+            word-break: break-word; /* Prevent overflow on very small screens */
+        }
+
+        .game-mode-selection {
+            display: flex;
+            flex-wrap: wrap; /* Allow buttons to wrap on small screens */
+            justify-content: center;
+            gap: 15px; /* Space between buttons */
+            margin-bottom: 25px;
+        }
+
+        .game-mode-selection button {
+            background-color: #ff007f; /* Pink */
+            color: white;
+            border: none;
+            padding: 14px 28px; /* Larger touch targets */
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1em; /* Readable font size */
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 15px rgba(255, 0, 127, 0.5); /* More prominent shadow */
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            min-width: 150px; /* Minimum width for buttons */
+        }
+
+        .game-mode-selection button:hover {
+            background-color: #e60073;
+            transform: translateY(-4px); /* More pronounced lift */
+            box-shadow: 0 8px 20px rgba(255, 0, 127, 0.6);
+        }
+
+        .game-info {
+            margin-bottom: 25px;
+        }
+
+        .message {
+            font-size: 1.2em; /* Slightly larger for readability */
+            font-weight: bold;
+            color: #ffcc00; /* Yellow for messages */
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.7); /* Stronger glow */
+            margin-bottom: 10px; /* Space between messages */
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* Adjusted gap */
+            margin-bottom: 25px;
+            font-size: 1.3em; /* Larger score text */
+            font-weight: bold;
+            flex-wrap: wrap; /* Allow scores to wrap */
+        }
+
+        .score-board .score-item {
+            padding: 10px 18px; /* Larger padding */
+            border-radius: 10px; /* Slightly more rounded */
+            background-color: #3a3a5a;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); /* Clearer shadow */
+            min-width: 100px; /* Ensure minimum width for score items */
+        }
+
+        .score-board .score-item.x-score {
+            color: #00f0ff;
+        }
+
+        .score-board .score-item.o-score {
+            color: #ffcc00;
+        }
+
+        .score-board .score-item.draw-score {
+            color: #ff9900;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* Use fractional units for fluid width */
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px; /* Slightly larger gap */
+            margin: 25px auto;
+            width: 90%; /* Fluid width for the board */
+            max-width: 330px; /* Max width for the board */
+            aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+            background-color: #1a1a2e;
+            border-radius: 12px; /* Slightly more rounded */
+            padding: 10px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8); /* Deeper inner shadow */
+        }
+
+        .cell {
+            width: 100%; /* Take full width of grid column */
+            padding-bottom: 100%; /* Maintain square aspect ratio for cells */
+            position: relative; /* For absolute positioning of content */
+            background-color: #3f3f6c; /* Muted purple */
+            border-radius: 10px; /* Slightly more rounded */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.8em; /* Larger symbols */
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+            color: #00f0ff; /* Cyan for X */
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); /* Clearer shadow */
+        }
+
+        .cell span { /* Wrap X/O in a span for centering */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .cell:hover:not(.x):not(.o) {
+            background-color: #5a5a8a;
+            transform: scale(1.05); /* More noticeable hover effect */
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .cell.o {
+            color: #ffcc00; /* Yellow for O */
+        }
+
+        #resetButton {
+            background-color: #00aaff; /* Blue */
+            color: white;
+            border: none;
+            padding: 14px 35px; /* Larger touch target */
+            margin-top: 30px; /* More space */
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.1em; /* Readable font size */
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 15px rgba(0, 170, 255, 0.5); /* More prominent shadow */
+        }
+
+        #resetButton:hover {
+            background-color: #0088cc;
+            transform: translateY(-4px); /* More pronounced lift */
+            box-shadow: 0 8px 20px rgba(0, 170, 255, 0.6);
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 20px;
+            }
+            .game-mode-selection button {
+                padding: 12px 20px;
+                font-size: 0.85em;
+                min-width: unset; /* Allow buttons to shrink more */
+            }
+            .score-board {
+                font-size: 1.1em;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .score-board .score-item {
+                padding: 8px 12px;
+            }
+            .message {
+                font-size: 1em;
+            }
+            .game-board {
+                gap: 8px;
+                max-width: 280px; /* Slightly smaller max-width for very small screens */
+            }
+            .cell {
+                font-size: 3.2em; /* Adjust cell symbol size */
+            }
+            #resetButton {
+                padding: 12px 25px;
+                font-size: 0.95em;
+                margin-top: 25px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            h1 {
+                font-size: 1.6em;
+            }
+            .game-mode-selection button {
+                font-size: 0.75em;
+            }
+            .score-board {
+                font-size: 1em;
+                flex-direction: column; /* Stack scores vertically */
+                gap: 8px;
+            }
+            .score-board .score-item {
+                width: 80%; /* Make score items take more width when stacked */
+                margin: 0 auto;
+            }
+            .game-board {
+                width: 95%; /* Take more width on very small screens */
+                max-width: 250px;
+            }
+            .cell {
+                font-size: 2.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Tic Tac Toe</h1>
+        <div class="game-mode-selection">
+            <button id="playBotBtn">Play Against Bot</button>
+            <button id="playFriendBtn">Play With Friend</button>
+        </div>
+
+        <div class="score-board">
+            <div class="score-item x-score">Player X: <span id="scoreX">0</span></div>
+            <div class="score-item o-score">Player O: <span id="scoreO">0</span></div>
+            <div class="score-item draw-score">Draws: <span id="scoreDraws">0</span></div>
+        </div>
+
+        <div class="game-info">
+            <p id="playerTurn" class="message">Player X's Turn</p>
+            <p id="gameStatus" class="message"></p>
+        </div>
+
+        <div class="game-board">
+            <div class="cell" data-cell-index="0"><span></span></div>
+            <div class="cell" data-cell-index="1"><span></span></div>
+            <div class="cell" data-cell-index="2"><span></span></div>
+            <div class="cell" data-cell-index="3"><span></span></div>
+            <div class="cell" data-cell-index="4"><span></span></div>
+            <div class="cell" data-cell-index="5"><span></span></div>
+            <div class="cell" data-cell-index="6"><span></span></div>
+            <div class="cell" data-cell-index="7"><span></span></div>
+            <div class="cell" data-cell-index="8"><span></span></div>
+        </div>
+
+        <button id="resetButton">Reset Game</button>
+    </div>
+
+    <!-- Embedded JavaScript for game logic -->
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const playerTurnDisplay = document.getElementById('playerTurn');
+        const gameStatusDisplay = document.getElementById('gameStatus');
+        const resetButton = document.getElementById('resetButton');
+        const playBotBtn = document.getElementById('playBotBtn');
+        const playFriendBtn = document.getElementById('playFriendBtn');
+
+        const scoreXDisplay = document.getElementById('scoreX');
+        const scoreODisplay = document.getElementById('scoreO');
+        const scoreDrawsDisplay = document.getElementById('scoreDraws');
+
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let isGameActive = false;
+        let isBotMode = false;
+        const botIntelligence = 0.95; // 95% chance of making an optimal move
+
+        let scoreX = 0;
+        let scoreO = 0;
+        let scoreDraws = 0;
+
+        // Winning conditions for Tic Tac Toe
+        const winningConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        // Messages for game status
+        const PLAYER_X_TURN = () => `Player X's Turn`;
+        const PLAYER_O_TURN = () => `Player O's Turn`;
+        const PLAYER_X_WON = () => `Player X has won!`;
+        const PLAYER_O_WON = () => `Player O has won!`;
+        const BOT_WON = () => `Bot has won!`;
+        const DRAW = () => `It's a draw!`;
+        const BOT_THINKING = () => `Bot is thinking...`; // Message for bot's turn
+
+        // Initialize game state display on load
+        playerTurnDisplay.textContent = 'Choose Game Mode';
+        gameStatusDisplay.textContent = '';
+        resetButton.style.display = 'none'; // Hide reset button until a mode is chosen
+        updateScoreDisplay(); // Initialize score display
+
+        // Event Listeners for cell clicks, reset button, and mode selection buttons
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        resetButton.addEventListener('click', handleResetGame);
+        playBotBtn.addEventListener('click', () => {
+            resetScores(); // Reset scores when changing mode
+            startGame(true); // Start game in bot mode
+        });
+        playFriendBtn.addEventListener('click', () => {
+            resetScores(); // Reset scores when changing mode
+            startGame(false); // Start game in friend mode
+        });
+
+        /**
+         * Updates the score display on the UI.
+         */
+        function updateScoreDisplay() {
+            scoreXDisplay.textContent = scoreX;
+            scoreODisplay.textContent = scoreO;
+            scoreDrawsDisplay.textContent = scoreDraws;
+        }
+
+        /**
+         * Resets all scores to zero and updates the display.
+         */
+        function resetScores() {
+            scoreX = 0;
+            scoreO = 0;
+            scoreDraws = 0;
+            updateScoreDisplay();
+        }
+
+        /**
+         * Initializes or restarts the game based on the chosen mode.
+         * @param {boolean} botMode - True if playing against the bot, false for local multiplayer.
+         */
+        function startGame(botMode) {
+            isGameActive = true; // Set game to active
+            isBotMode = botMode; // Set bot mode flag
+            board = ['', '', '', '', '', '', '', '', '']; // Clear the game board
+            currentPlayer = 'X'; // Player X always starts
+            playerTurnDisplay.textContent = isBotMode ? `Player X's Turn (You)` : PLAYER_X_TURN(); // Update turn display
+            gameStatusDisplay.textContent = ''; // Clear game status message
+            // Reset cell content and styling
+            cells.forEach(cell => {
+                cell.querySelector('span').textContent = ''; // Clear content inside span
+                cell.classList.remove('x', 'o');
+            });
+            resetButton.style.display = 'block'; // Show the reset button
+            playerTurnDisplay.style.color = '#ffcc00'; // Reset turn message color
+            gameStatusDisplay.style.color = '#ffcc00'; // Reset status message color
+        }
+
+        /**
+         * Handles a click event on a game cell.
+         * @param {Event} clickedCellEvent - The click event object.
+         */
+        function handleCellClick(clickedCellEvent) {
+            const clickedCell = clickedCellEvent.target.closest('.cell'); // Use closest to ensure we get the cell element
+            if (!clickedCell) return; // If click wasn't on a cell, return
+
+            const clickedCellIndex = parseInt(clickedCell.dataset.cellIndex); // Get the index of the clicked cell
+
+            // If the cell is already occupied or game is not active, do nothing
+            if (board[clickedCellIndex] !== '' || !isGameActive) {
+                return;
+            }
+
+            handlePlayerMove(clickedCell, clickedCellIndex); // Process the player's move
+            checkGameResult(); // Check for win/draw after the move
+
+            // If in bot mode and it's the bot's turn, trigger bot's move after a short delay
+            if (isGameActive && isBotMode && currentPlayer === 'O') {
+                playerTurnDisplay.textContent = BOT_THINKING(); // Show thinking message
+                setTimeout(handleBotMove, 1000); // Increased delay for thinking message visibility
+            }
+        }
+
+        /**
+         * Updates the game board and cell display for a player's move.
+         * @param {HTMLElement} cell - The HTML element of the cell clicked.
+         * @param {number} index - The index of the cell in the board array.
+         */
+        function handlePlayerMove(cell, index) {
+            board[index] = currentPlayer; // Update the board array
+            cell.querySelector('span').textContent = currentPlayer; // Display X or O in the span
+            cell.classList.add(currentPlayer.toLowerCase()); // Add 'x' or 'o' class for styling
+        }
+
+        /**
+         * Checks the current state of the game for a win or a draw.
+         */
+        function checkGameResult() {
+            let roundWon = false;
+            // Iterate through winning conditions to check for a winner
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                let a = board[winCondition[0]];
+                let b = board[winCondition[1]];
+                let c = board[winCondition[2]];
+
+                // If any cell in the condition is empty, continue to next condition
+                if (a === '' || b === '' || c === '') {
+                    continue;
+                }
+                // If all cells in the condition match, a player has won
+                if (a === b && b === c) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            // If a player has won
+            if (roundWon) {
+                isGameActive = false; // End the game
+                // Display the appropriate win message and update score
+                if (isBotMode && currentPlayer === 'O') {
+                    gameStatusDisplay.textContent = BOT_WON();
+                    scoreO++;
+                } else if (currentPlayer === 'X') {
+                    gameStatusDisplay.textContent = PLAYER_X_WON();
+                    scoreX++;
+                } else {
+                    gameStatusDisplay.textContent = PLAYER_O_WON();
+                    scoreO++;
+                }
+                gameStatusDisplay.style.color = '#00ff00'; // Set win message color to green
+                playerTurnDisplay.textContent = ''; // Clear turn display
+                updateScoreDisplay(); // Update score display
+                return;
+            }
+
+            // If the board is full and no one has won, it's a draw
+            if (!board.includes('')) {
+                isGameActive = false; // End the game
+                gameStatusDisplay.textContent = DRAW(); // Display draw message
+                gameStatusDisplay.style.color = '#ff9900'; // Set draw message color to orange
+                playerTurnDisplay.textContent = ''; // Clear turn display
+                scoreDraws++; // Increment draw score
+                updateScoreDisplay(); // Update score display
+                return;
+            }
+
+            // If no win or draw, switch to the next player's turn
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            playerTurnDisplay.textContent = isBotMode && currentPlayer === 'O' ? `Bot's Turn` : (currentPlayer === 'X' ? PLAYER_X_TURN() : PLAYER_O_TURN());
+        }
+
+        /**
+         * Resets the game to its initial state.
+         */
+        function handleResetGame() {
+            startGame(isBotMode); // Restart the game using the current mode (bot or friend)
+        }
+
+        /**
+         * Handles the bot's move using a basic Minimax algorithm, with a chance for a random move.
+         */
+        function handleBotMove() {
+            // Only proceed if the game is active and it's the bot's turn ('O')
+            if (!isGameActive || currentPlayer !== 'O') return;
+
+            let move = -1;
+            const availableMoves = [];
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === '') {
+                    availableMoves.push(i);
+                }
+            }
+
+            // Decide whether to make an optimal move or a random move
+            if (Math.random() < botIntelligence) {
+                // Make an optimal move using Minimax
+                let bestScore = -Infinity;
+                for (let i = 0; i < board.length; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'O';
+                        let score = minimax(board, 0, false);
+                        board[i] = ''; // Undo the move
+                        if (score > bestScore) {
+                            bestScore = score;
+                            move = i;
+                        }
+                    }
+                }
+            } else {
+                // Make a random move
+                if (availableMoves.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * availableMoves.length);
+                    move = availableMoves[randomIndex];
+                }
+            }
+
+            // If a move was determined, execute it
+            if (move !== -1) {
+                handlePlayerMove(cells[move], move);
+                checkGameResult();
+            }
+        }
+
+        /**
+         * The Minimax algorithm to determine the best move for the bot.
+         * @param {Array<string>} currentBoard - The current state of the game board.
+         * @param {number} depth - The current depth of the recursion tree.
+         * @param {boolean} isMaximizingPlayer - True if currently trying to maximize score (bot's turn), false otherwise.
+         * @returns {number} The score of the current board state.
+         */
+        function minimax(currentBoard, depth, isMaximizingPlayer) {
+            let result = checkWinner(currentBoard); // Check if there's a winner or draw
+            if (result !== null) {
+                // Return scores based on the outcome
+                if (result === 'O') return 10 - depth; // Bot (O) wins, higher score for shallower wins
+                if (result === 'X') return depth - 10; // Player (X) wins, lower score for shallower losses
+                if (result === 'draw') return 0; // Draw
+            }
+
+            if (isMaximizingPlayer) { // Bot's turn (maximizing player)
+                let bestScore = -Infinity;
+                for (let i = 0; i < currentBoard.length; i++) {
+                    if (currentBoard[i] === '') {
+                        currentBoard[i] = 'O'; // Try bot's move
+                        let score = minimax(currentBoard, depth + 1, false); // Recurse for opponent's turn
+                        currentBoard[i] = ''; // Undo move
+                        bestScore = Math.max(bestScore, score); // Take the maximum score
+                    }
+                }
+                return bestScore;
+            } else { // Player's turn (minimizing player)
+                let bestScore = Infinity;
+                for (let i = 0; i < currentBoard.length; i++) {
+                    if (currentBoard[i] === '') {
+                        currentBoard[i] = 'X'; // Try player's move
+                        let score = minimax(currentBoard, depth + 1, true); // Recurse for bot's turn
+                        currentBoard[i] = ''; // Undo move
+                        bestScore = Math.min(bestScore, score); // Take the minimum score
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        /**
+         * Checks if there's a winner or a draw on a given board state.
+         * @param {Array<string>} currentBoard - The board state to check.
+         * @returns {string|null} 'X', 'O', 'draw', or null if no winner/draw yet.
+         */
+        function checkWinner(currentBoard) {
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (currentBoard[a] !== '' && currentBoard[a] === currentBoard[b] && currentBoard[a] === currentBoard[c]) {
+                    return currentBoard[a]; // Returns 'X' or 'O' if a winner is found
+                }
+            }
+            // If no empty cells and no winner, it's a draw
+            if (!currentBoard.includes('')) {
+                return 'draw';
+            }
+            return null; // No winner yet
+        }
+    </script>
+</body>
+</html>
